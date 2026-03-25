@@ -4,7 +4,6 @@ const questionTitle = document.getElementById("question-title")
 const buttonSpace = document.getElementById("button-space")
 const currentQuestionNum = document.getElementById("question-num")
 const submitButton = document.getElementById("submit-button")
-const questionCount = document.getElementById("question-count")
 
 // Global Variables Delcaration
 
@@ -14,6 +13,8 @@ const usedQuestionsArr =
   JSON.parse(sessionStorage.getItem("usedQuestionsArr")) || []
 const usedAnswersArr =
   JSON.parse(sessionStorage.getItem("usedAnswersArr")) || []
+const difficulty = sessionStorage.getItem("chosenDifficulty") || "easy"
+const numOfQuestions = sessionStorage.getItem("totalQuestions") || 10
 let currentQuestion = {}
 const questionsEasy = [
   {
@@ -607,14 +608,16 @@ const randomQuestionExtraction = function () {
     //se l'array pulled question è uguale a quello delle question vuol dire che le domande sono finite
     return null
   }
-  let indiceRand
-  let domandaScelta
+  let randomIndex
+  let selectedQuestion
+
   do {
-    indiceRand = Math.floor(Math.random() * arrQuestions.length) //indice delle domande nell'array
-    domandaScelta = arrQuestions[indiceRand]
-  } while (pulledQuestions.includes(domandaScelta))
-  pulledQuestions.push(domandaScelta)
-  return domandaScelta
+    randomIndex = Math.floor(Math.random() * arrQuestions.length)
+    selectedQuestion = arrQuestions[randomIndex]
+  } while (pulledQuestions.includes(selectedQuestion))
+
+  pulledQuestions.push(selectedQuestion)
+  return selectedQuestion
 }
 
 // Function to generate a random array to mix the possible answers' positions each time.
@@ -683,9 +686,7 @@ const startTimer = () => {
 const displayNextQuestion = (questionObj) => {
   currentQuestion = questionObj
   buttonSpace.innerHTML = ""
-  const totalQuestions =
-    parseInt(sessionStorage.getItem("totalQuestions")) || 10
-  if (questionNumber >= totalQuestions) {
+  if (questionNumber >= numOfQuestions) {
     sessionStorage.setItem("score", score)
     sessionStorage.setItem("usedAnswersArr", JSON.stringify(usedAnswersArr))
     sessionStorage.setItem("usedQuestionsArr", JSON.stringify(usedQuestionsArr))
@@ -769,10 +770,10 @@ const displayResults = () => {
   const wrongPercentageP = document.getElementById("percentage-wrong-answers")
   const correctAnswersP = document.getElementById("number-correct-answers")
   const wrongAnswersP = document.getElementById("number-wrong-answers")
-  correctPercentageP.innerText = `${((score / 10) * 100).toFixed(1)}%`
-  wrongPercentageP.innerText = `${(((10 - score) / 10) * 100).toFixed(1)}%`
-  correctAnswersP.innerText = `${score}/10 questions`
-  wrongAnswersP.innerText = `${10 - score}/10 questions`
+  correctPercentageP.innerText = `${(score / numOfQuestions).toFixed(1) * 100}%`
+  wrongPercentageP.innerText = `${((numOfQuestions - score) / numOfQuestions).toFixed(1) * 100}%`
+  correctAnswersP.innerText = `${score}/${numOfQuestions} questions`
+  wrongAnswersP.innerText = `${numOfQuestions - score}/${numOfQuestions} questions`
   if (score < 6) {
     resultMessage.innerHTML = `
     <h4>We're sorry!</h4>
@@ -804,11 +805,16 @@ window.addEventListener("load", () => {
 
   // --- LOGICA PAGINA BENCHMARK (QUIZ) ---
   if (document.getElementById("benchmark-body")) {
-    const difficulty = sessionStorage.getItem("chosenDifficulty") || "easy"
-
-    if (difficulty === "easy") arrQuestions = questionsEasy
-    else if (difficulty === "medium") arrQuestions = questionsMedium
-    else if (difficulty === "hard") arrQuestions = questionsHard
+    const totalQuestionNum = document.getElementById("total-question-num")
+    totalQuestionNum.innerText = `/ ${numOfQuestions}`
+    if (difficulty === "easy")
+      arrQuestions = questionsEasy.filter((question, i) => i <= numOfQuestions)
+    else if (difficulty === "medium")
+      arrQuestions = questionsMedium.filter(
+        (question, i) => i <= numOfQuestions,
+      )
+    else if (difficulty === "hard")
+      arrQuestions = questionsHard.filter((question, i) => i <= numOfQuestions)
 
     // Fai partire il quiz immediatamente
     const primaDomanda = randomQuestionExtraction()
@@ -972,39 +978,3 @@ const success = function () {
     }
   }
 }
-
-// estrazione n domande
-const estraiDomande = function (arr, n) {
-  const copiaArray = [...arr]
-  for (let i = copiaArray.length - 1; i > 0; i--) {
-    const randomIndex = Math.floor(Math.random() * (i + 1))
-    ;[copiaArray[i], copiaArray[randomIndex]] = [
-      copiaArray[randomIndex],
-      copiaArray[i],
-    ]
-  }
-  return copiaArray.slice(0, n)
-}
-
-questionCount.addEventListener("click", () => {
-  const difficulty = document.getElementById("difficulty").value
-  const n = parseInt(questionCount.value)
-
-  let arrQuestions
-  if (difficulty === "easy") arrQuestions = questionsEasy
-  else if (difficulty === "medium") arrQuestions = questionsMedium
-  else if (difficulty === "hard") arrQuestions = questionsHard
-
-  const numQuestion = Math.min(n, arrQuestions.length)
-  const estrette = estraiDomande(arrQuestions, numQuestion)
-
-  questionTitle.innerText = ""
-
-  estrette.forEach((d, i) => {
-    const p = document.createElement("p")
-    p.textContent = `${i + 1}. ${d.question}`
-    questionTitle.appendChild(p)
-  })
-})
-
-const buttonProceed = document.getElementById("button-proceed")
