@@ -4,6 +4,7 @@ const questionTitle = document.getElementById("question-title")
 const buttonSpace = document.getElementById("button-space")
 const currentQuestionNum = document.getElementById("question-num")
 const submitButton = document.getElementById("submit-button")
+const questionCount = document.getElementById("question-count")
 
 // Global Variables Delcaration
 
@@ -609,7 +610,7 @@ const randomQuestionExtraction = function () {
   let indiceRand
   let domandaScelta
   do {
-    indiceRand = Math.floor(Math.random() * questionsEasy.length) //indice delle domande nell'array
+    indiceRand = Math.floor(Math.random() * arrQuestions.length) //indice delle domande nell'array
     domandaScelta = arrQuestions[indiceRand]
   } while (pulledQuestions.includes(domandaScelta))
   pulledQuestions.push(domandaScelta)
@@ -682,7 +683,9 @@ const startTimer = () => {
 const displayNextQuestion = (questionObj) => {
   currentQuestion = questionObj
   buttonSpace.innerHTML = ""
-  if (questionNumber >= 10) {
+  const totalQuestions =
+    parseInt(sessionStorage.getItem("totalQuestions")) || 10
+  if (questionNumber >= totalQuestions) {
     sessionStorage.setItem("score", score)
     sessionStorage.setItem("usedAnswersArr", JSON.stringify(usedAnswersArr))
     sessionStorage.setItem("usedQuestionsArr", JSON.stringify(usedQuestionsArr))
@@ -766,8 +769,8 @@ const displayResults = () => {
   const wrongPercentageP = document.getElementById("percentage-wrong-answers")
   const correctAnswersP = document.getElementById("number-correct-answers")
   const wrongAnswersP = document.getElementById("number-wrong-answers")
-  correctPercentageP.innerText = `${score.toFixed(1) * 10}%`
-  wrongPercentageP.innerText = `${(10 - score).toFixed(1) * 10}%`
+  correctPercentageP.innerText = `${((score / 10) * 100).toFixed(1)}%`
+  wrongPercentageP.innerText = `${(((10 - score) / 10) * 100).toFixed(1)}%`
   correctAnswersP.innerText = `${score}/10 questions`
   wrongAnswersP.innerText = `${10 - score}/10 questions`
   if (score < 6) {
@@ -969,3 +972,39 @@ const success = function () {
     }
   }
 }
+
+// estrazione n domande
+const estraiDomande = function (arr, n) {
+  const copiaArray = [...arr]
+  for (let i = copiaArray.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1))
+    ;[copiaArray[i], copiaArray[randomIndex]] = [
+      copiaArray[randomIndex],
+      copiaArray[i],
+    ]
+  }
+  return copiaArray.slice(0, n)
+}
+
+questionCount.addEventListener("click", () => {
+  const difficulty = document.getElementById("difficulty").value
+  const n = parseInt(questionCount.value)
+
+  let arrQuestions
+  if (difficulty === "easy") arrQuestions = questionsEasy
+  else if (difficulty === "medium") arrQuestions = questionsMedium
+  else if (difficulty === "hard") arrQuestions = questionsHard
+
+  const numQuestion = Math.min(n, arrQuestions.length)
+  const estrette = estraiDomande(arrQuestions, numQuestion)
+
+  questionTitle.innerText = ""
+
+  estrette.forEach((d, i) => {
+    const p = document.createElement("p")
+    p.textContent = `${i + 1}. ${d.question}`
+    questionTitle.appendChild(p)
+  })
+})
+
+const buttonProceed = document.getElementById("button-proceed")
